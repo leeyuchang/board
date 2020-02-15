@@ -122,7 +122,7 @@ public class UploadController {
         var emitter = emitterMap.get(sessionId);
 
         try {
-            emitter.send(SseEmitter.event().name(event).data(attach));
+            emitter.send(SseEmitter.event().name(event).data(attach).reconnectTime(5000));
         } catch (IOException e) {
             log.info("notify error on : " + e);
             emitter.completeWithError(e);

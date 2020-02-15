@@ -29,8 +29,6 @@ import lombok.extern.java.Log;
 @Service
 public class FileUploadServiceImpl implements FileUploadService {
 
-        // private AccessTokenInfo accessTokenInfo = new AccessTokenInfo();
-
         @Resource(name = "accessTokenInfo")
         private AccessTokenInfo accessTokenInfo;
 
