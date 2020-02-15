@@ -51,8 +51,7 @@ public class BoardController {
     @GetMapping("/board/list")
     public String getListForm(@ModelAttribute("cri") Criteria cri, Model model, HttpSession session) {
 
-        log.info(" /board/list start with sessionId :" + session.getId()); // TODO Session
-                                                                           // ID取得に問題があり、Clientに対し、ここでSession開始する。
+        log.info(" /board/list start with sessionId :" + session.getId());
 
         log.info("★/board/list：" + cri);
         model.addAttribute("list", boardService.getList(cri));
