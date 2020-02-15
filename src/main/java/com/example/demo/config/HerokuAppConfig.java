@@ -17,18 +17,13 @@ import lombok.extern.java.Log;
 public class HerokuAppConfig {
 
      @Bean
-    public DataSource dataSource() {
+    public DataSource dataSource() throws URISyntaxException {
 
         String database_url = System.getenv("DATABASE_URL");
         Objects.requireNonNull(database_url);
         log.info("★ DATABASE_URL :" + database_url);
 
-        URI dbUri = null;
-        try {
-            dbUri = new URI(database_url);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
+        URI dbUri = new URI(database_url);
 
         String username = dbUri.getUserInfo().split(":")[0];
         String password = dbUri.getUserInfo().split(":")[1];
