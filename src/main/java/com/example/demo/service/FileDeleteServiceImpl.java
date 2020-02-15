@@ -7,6 +7,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
 
+import javax.annotation.Resource;
+
+import com.example.demo.domain.AccessTokenInfo;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +23,8 @@ public class FileDeleteServiceImpl implements FileDeleteService {
     @Autowired
     private HttpClient httpClient;
 
-    private final String accessToken = 
-    "ya29.ImG9BwycNJZB6I0Zxl4cTNocvnXOTcqpKaIdtRjqINL1lmlUocUOlW7jwrE9JjvK-e0VUBgpCdDbz1zz5Xb5XFXfeL6s7uUagGNUTsgMnHWe2J8x1-q8emI5xAGbQ9KSbzeA";
+    @Resource(name = "accessTokenInfo")
+    private AccessTokenInfo accessTokenInfo;
 
     @Override
     public void delete(String fileId) {
@@ -29,7 +33,7 @@ public class FileDeleteServiceImpl implements FileDeleteService {
 
         HttpRequest httpRequest = HttpRequest
                 .newBuilder(URI.create("https://www.googleapis.com/drive/v3/files/" + fileId))
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", "Bearer " + accessTokenInfo.getAccessToken())
                 .DELETE()
                 .build();
 
