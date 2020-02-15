@@ -117,12 +117,12 @@ public class UploadController {
         return emitter;
     }
 
-    private synchronized void notify(String sessionId, String event, BoardAttachVO attach) {
+    private void notify(String sessionId, String event, BoardAttachVO attach) {
 
         var emitter = emitterMap.get(sessionId);
 
         try {
-            emitter.send(SseEmitter.event().name(event).data(attach).reconnectTime(5000));
+            emitter.send(SseEmitter.event().name(event).data(attach));
         } catch (IOException e) {
             log.info("notify error on : " + e);
             emitter.completeWithError(e);
