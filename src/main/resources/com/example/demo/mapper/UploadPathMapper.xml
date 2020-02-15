@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.demo.mapper.UploadPathMapper">
-
 	<resultMap id="uploadPathVoMap" type="com.example.demo.domain.UploadPathVO">
 		<result property="id" column="id" />
 		<result property="root" column="root" />
@@ -18,7 +17,7 @@
 	</insert>
 
 	<select id="select" resultMap="uploadPathVoMap">
-		select id, root, year, month, day from tbl_upload_path order by id desc limit 1
+		select * from tbl_upload_path order by id desc limit 1
 	</select>
 
 	<select id="getYesterDayFolder" resultMap="uploadPathVoMap">
@@ -29,5 +28,4 @@
 		  where 
 			TO_CHAR(id, 'yyyy/mm/dd') like TO_CHAR(current_timestamp + '-1 days', 'yyyy/mm/dd')
 	  </select>
-
 </mapper>

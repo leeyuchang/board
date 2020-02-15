@@ -6,8 +6,8 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface UploadPathMapper {
-	public UploadPathVO select();
-	public void truncate();
-	public void insert(UploadPathVO uploadPathVO);
-	public UploadPathVO getYesterDayFolder();
+	UploadPathVO select();
+	void truncate();
+	void insert(UploadPathVO uploadPathVO);
+	UploadPathVO getYesterDayFolder();
 }
