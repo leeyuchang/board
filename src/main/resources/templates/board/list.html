@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+    xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/layout}">
+
+<head>
+    <title th:text="#{userid.message}"></title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="panel-heading">[[#{label.reg.title}]]
+        </div>
+        <div class="panel-body">
+            <button id="regBtn" type="button" class="btn btn-default btn-sm pull-right">[[#{label.btn.reg}]]</button>
+            <!-- List -->
+            <table class="table table-striped table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>[[#{label.bno}]]</th>
+                        <th>[[#{label.title}]]</th>
+                        <!-- <th>[[#{label.content}]]</th> -->
+                        <th>[[#{label.writer}]]</th>
+                        <th>[[#{label.regdate}]]</th>
+                        <!-- <th>[[#{label.updateDate}]]</th> -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="board: ${list}">
+                        <td>[[${board.bno}]]</td>
+                        <td><a th:href="@{
+                            get(bno=${board.bno},
+                            pageNum=${pageMaker.cri.pageNum},
+                            amount=${pageMaker.cri.amount},
+                            type=${pageMaker.cri.type},
+                            keyword=${pageMaker.cri.keyword})}">
+                                [[${board.title}]]
+                                <span class="badge badge-primary">[[${board.replyCnt}]]</span> </a>
+                            <!-- <td>[[${board.content}]]</td> -->
+                        <td>[[${board.writer}]]</td>
+                        <td>[[${board.regdate}]]</td>
+                        <!-- <td>[[${board.updateDate}]]</td> -->
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Search -->
+            <form>
+                <div class="col-md-6 mb-3">
+                    <select id="searchType" class="form-control">
+                        <option value="">[[#{label.no.select}]]</option>
+                        <option value="T" th:selected="${pageMaker.cri.type} == 'T'">[[#{title}]]</option>
+                        <option value="C" th:selected="${pageMaker.cri.type} == 'C'">[[#{content}]]</option>
+                        <option value="W" th:selected="${pageMaker.cri.type} == 'W'">[[#{writer}]]</option>
+                        <option value="TC" th:selected="${pageMaker.cri.type} == 'TC'">[[#{title.content}]]</option>
+                        <option value="TW" th:selected="${pageMaker.cri.type} == 'TW'">[[#{title.writer}]]</option>
+                        <option value="TCW" th:selected="${pageMaker.cri.type} == 'TCW'">[[#{title.content.writer}]]
+                        </option>
+                    </select>
+                </div>
+            
+                <div class="col-md-6 mb-3">
+                    <div class="input-group">
+                        <input th:value="${pageMaker.cri.keyword}" type="text" id="searchKeyword" class="form-control"
+                            placeholder="例）キーボード">
+                        <div class="input-group-btn">
+                            <button id="searchBtn" class="btn btn-default"><i class="glyphicon glyphicon-search"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Pagination Start -->
+            <ul class="pagination pull-right" th:unless="${#lists.isEmpty(list)}">
+                <li th:if="${pageMaker.prev}" class="page-item">
+                    <a class="page-link prev" th:href="${pageMaker.startPage}-1">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li th:each="num:${#numbers.sequence(pageMaker.startPage, pageMaker.endPage)}" th:classappend="${pageMaker.cri.pageNum == num} ? ' page-item active':'page-item'">
+                    <a class="page-link" th:href="${num}">
+                        [[${num}]]
+                    </a>
+                </li>
+                <li th:if="${pageMaker.next}" class="page-item">
+                    <a class="page-link next" th:href="${pageMaker.endPage}+1">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </div> <!-- <div class="panel-body"> -->
+               
+        <!-- Request Param -->
+        <form id="actionForm">
+            <input type="hidden" name="pageNum" th:value="${pageMaker.cri.pageNum}">
+            <input type="hidden" name="amount"  th:value="${pageMaker.cri.amount}">
+            <input type="hidden" name="type"    th:value="${cri.type}">
+            <input type="hidden" name="keyword" th:value="${cri.keyword}">
+        </form>
+
+        <!-- Modal -->
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="myModalLabel" th:text="#{label.modal.title}"></h4>
+                    </div>
+                    <div class="modal-body"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal" th:text="#{label.close}"></button>
+                    </div>
+                </div> <!-- /.modal-content -->
+            </div> <!-- Modal Dialog End -->
+        </div> <!-- /.modal-dialog -->
+
+    </div> <!-- layout:fragment="content" -->
+
+    <th:block layout:fragment="script">
+        <script th:inline="javascript">
+            $(document).ready(function () {
+                let response = [[${response}]];
+                let msg = '';
+                if (response !== null) {
+                    msg = response.result
+                }
+                checkModal(msg);
+                regBtnEventHandler();
+                preventBackButton();
+                pageBtnEventHandler();
+                searchBtnEventHandler();
+            });
+
+            function preventBackButton() {
+                history.replaceState({}, null, null);
+            }
+
+            function checkModal(msg) {
+                if (msg === "" || msg === undefined || history.state) {
+                    return;
+                }
+                console.log("msg:" + msg);
+                $(".modal-body").html(msg);
+                $("#myModal").modal("show");
+            }
+
+            function regBtnEventHandler() {
+                $("#regBtn").on("click", function () {
+                    let actionForm = $("#actionForm");
+                    let typeStr = $("#searchType").find(":selected").val();
+                    let keywordStr = $("#searchKeyword").val();
+
+                    // 0件のバグ修正
+                    let aObj = $(".pagination .active a").attr("href");
+                    if(aObj == undefined) {
+                        aObj = 1;
+                    }
+                    actionForm.find('input[name="pageNum"]').val(aObj);
+                    actionForm.find('input[name="type"]').val(typeStr);
+                    actionForm.find('input[name="keyword"]').val(keywordStr);
+                    actionForm.attr("action", "/board/register");
+                    actionForm.attr("method", "get");
+                    actionForm.submit();
+                });
+            }
+
+            function pageBtnEventHandler() {
+                let actionForm = $("#actionForm");
+                $(".page-item a").on("click", function (e) {
+                    e.preventDefault();
+                    let typeStr = $("#searchType").find(":selected").val();
+                    let keywordStr = $("#searchKeyword").val();
+                    actionForm.find('input[name="pageNum"]').val($(this).attr("href"));
+                    actionForm.find('input[name="type"]').val(typeStr);
+                    actionForm.find('input[name="keyword"]').val(keywordStr);
+                    actionForm.attr("action", "/board/list");
+                    actionForm.attr("method", "get");
+                    actionForm.submit();
+                });
+            }
+
+            function searchBtnEventHandler() {
+                let actionForm = $("#actionForm");
+                $("#searchBtn").on("click", function (e) {
+                    e.preventDefault();
+                    let typeStr = $("#searchType").find(":selected").val();
+                    let keywordStr = $("#searchKeyword").val();
+
+                    actionForm.attr("action", "/board/list");
+                    actionForm.attr("method", "get");
+                    actionForm.find('input[name="type"]').val(typeStr);
+                    actionForm.find('input[name="keyword"]').val(keywordStr);
+                    actionForm.submit();
+                });
+            }
+
+            function getList() {
+                replyService.getList({ bno: 300, page: 1 }, function (list) {
+                    for (let i = 0, len = list.length; i < len; i++) {
+                        console.log(list[i]);
+                    }
+                });
+            }
+
+        </script>
+    </th:block>
+</body>
+
+</html>

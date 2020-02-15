@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.ReplyMapper">
+    <insert id="insert">
+        insert into tbl_reply (rno, bno, reply, replyer)
+        values(nextval('seq_reply'), #{bno}, #{reply}, #{replyer})
+    </insert>
+
+    <select id="read" resultType="com.example.demo.domain.ReplyVO">
+        select * from tbl_reply where rno = #{rno}
+    </select>
+
+    <update id="update">
+        update tbl_reply set reply=#{reply},replyer=#{replyer},updatedate=current_timestamp where rno = #{rno}
+    </update>
+
+    <delete id="delete">
+        delete from tbl_reply where rno = #{rno}
+    </delete>
+
+  <select id="getListWithPaging" resultType="com.example.demo.domain.ReplyVO">
+    select
+        rno
+        , bno
+        , reply
+        , replyer
+        , replyDate
+        , updateDate 
+      from
+            tbl_reply 
+          where
+            bno = #{bno}
+            order by rno  
+            offset(#{cri.pageNum}-1)*#{cri.amount} limit #{cri.amount}
+  </select>
+
+    <select id="getCountByBno" resultType="int">
+        select count(rno) from tbl_reply where bno=#{bno}
+    </select>
+
+    <delete id="deleteAllByBno">
+      delete from tbl_reply where bno=#{bno} 
+    </delete>
+</mapper>

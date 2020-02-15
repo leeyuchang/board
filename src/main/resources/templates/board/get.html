@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html   xmlns:th="http://www.thymeleaf.org" 
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        xmlns:sec="http://www.thymeleaf.org/extras/spring-security" 
+        layout:decorate="~{layouts/layout}">
+
+<head>
+    <title>Home</title>
+    <style>
+        .uploadResult {
+            width: 100%;
+            background-color: gray;
+        }
+
+        .uploadResult ul {
+            display: flex;
+            flex-flow: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .uploadResult ul li {
+            list-style: none;
+            padding: 10px;
+            align-content: center;
+            text-align: center;
+        }
+
+        .uploadResult ul li img {
+            width: 100px;
+        }
+
+        .uploadResult ul li span {
+            color: white;
+        }
+
+        .bigPictureWrapper {
+            position: absolute;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            top: 0%;
+            width: 100%;
+            height: 100%;
+            background-color: gray;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .bigPicture {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bigPicture img {
+            width: 600px;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">Board Read Page</div>
+
+                    <div class="panel-body" th:object="${formData}">
+                        <div class="form-group">
+                            <label th:text="#{label.bno}"></label>
+                            <input th:field="*{bno}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label th:text="#{label.title}"></label>
+                            <input th:field="*{title}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label th:text="#{label.content}"></label>
+                            <input th:field="*{content}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label th:text="#{label.writer}"></label>
+                            <input th:field="*{writer}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label th:text="#{label.regdate}"></label>
+                            <input th:field="*{regdate}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label th:text="#{label.updateDate}"></label>
+                            <input th:field="*{updateDate}" class="form-control" readonly>
+                        </div>
+
+                        <div th:with="userName=${#authentication.principal} eq 'anonymousUser' ? 'Guest' : ${#authentication.principal.member.userName}">
+                           <th:block th:if="${userName} eq ${formData.writer}">
+                               <!-- <button type="button" data-oper="modify" class="btn btn-default" th:text="#{label.btn.edit}"></button> -->
+                            </th:block>
+                            <button type="button" data-oper="modify" class="btn btn-default" th:text="#{label.btn.edit}"></button>
+                           <button type="button" data-oper="list" class="btn btn-info" th:text="#{label.btn.list}"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class='bigPictureWrapper'>
+            <div class='bigPicture'>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">Files</div>
+                    <div class="panel-body">
+                        <div class="form-group uploadDiv">
+                            <div class="uploadResult">
+                                <ul>
+                                </ul>
+                            </div> <!-- end uploadResult -->
+                        </div> <!-- end form-grop uploadDiv -->
+                    </div> <!-- end panel-body -->
+                </div> <!-- end panel-default -->
+            </div>
+        </div> <!-- end class="row" -->
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-comments fa-fw"></i> Reply
+                        <button id="addReplyBtn" class="btn btn-primary btn-xs pull-right">[[#{label.btn.reg}]]</button>
+                        <th:block th:if="${#authentication.principal} ne 'anonymousUser'" > 
+                            <!-- <button id="addReplyBtn" class="btn btn-primary btn-xs pull-right">[[#{label.btn.reg}]]</button> -->
+                        </th:block>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="chat">
+                        </ul>
+                    </div>
+                    <div class="panel-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="GET" id="operForm">
+            <input type="hidden" name="bno" th:value="${formData.bno}">
+            <input type="hidden" name="pageNum" th:value="${cri.pageNum}">
+            <input type="hidden" name="amount" th:value="${cri.amount}">
+            <input type="hidden" name="type" th:value="${cri.type}">
+            <input type="hidden" name="keyword" th:value="${cri.keyword}">
+        </form>
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="myModalLabel">[[#{label.reply}]]</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>[[#{label.reply}]]</label>
+                            <input class="form-control" name="reply">
+                        </div>
+                        <div class="form-group">
+                            <label>[[#{label.replyer}]]</label>
+                            <th:block th:if="${#authentication.principal} ne 'anonymousUser'">
+                                <!-- <input class="form-control" th:name="replyer" th:value="${#authentication.principal.member.userName}" readonly> -->
+                            </th:block>
+                            <input class="form-control" th:name="replyer">
+                        </div>
+                        <div class="form-group">
+                            <label>[[#{label.replyDate}]]</label>
+                            <input class="form-control" name="replyDate">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button id='modalModBtn' type="button" class="btn btn-warning">[[#{label.btn.edit}]]</button>
+                        <button id='modalRemoveBtn' type="button" class="btn btn-danger">[[#{label.btn.remove}]]</button>
+                        <button id='modalRegisterBtn' type="button" class="btn btn-primary">[[#{label.btn.reg}]]</button>
+                        <button id='modalCloseBtn' type="button" class="btn btn-default">[[#{label.close}]]</button>
+                    </div>
+                </div> <!-- /.modal-content -->
+            </div> <!-- /.modal-dialog -->
+        </div> <!-- /.modal -->
+
+    </div> <!-- <div layout:fragment="content"> -->
+
+    <th:block layout:fragment="script">
+        <script th:inline="javascript">
+            $(document).ready(function () {
+
+                (function () {
+                    let bno = [[${ formData.bno }]]
+                    $.getJSON("/board/getAttachList", { bno: bno }, function (arr) {
+
+                        let str = "";
+
+                        $(arr).each(function (i, attach) {
+                            const { fileId, fileName, fileType, folderName } = attach;
+                            if (fileType) {
+                                str += `
+                                    <li data-fileId="${fileId}" data-fileName="${fileName}" data-fileType="${fileType}" data-folderName="${folderName}">
+                                       <div>
+                                            <span>${fileName}</span>
+                                            <br/>
+                                            <img src="/display?fileId=${fileId}">
+                                        </div> 
+                                    </li>
+                                `;
+                            } else {
+                                str += `
+                                    <li data-fileId="${fileId}" data-fileName="${fileName}" data-fileType="${fileType}" data-folderName="${folderName}">
+                                        <div>
+                                            <span>${fileName}</span>
+                                            <br/>
+                                            <img src="/img/attach.png">
+                                        </div>
+                                    </li>
+                                `;
+                            }
+                        });
+                        $(".uploadResult ul").html(str);
+                    }); // get getJson
+                })(); // end function
+
+                showList(1);
+
+                let operForm = $("#operForm");
+
+                $('button[data-oper="modify"]').on("click", function () {
+                    operForm.attr("action", "/board/modify");
+                    operForm.submit();
+                });
+
+                $('button[data-oper="list"]').on("click", function () {
+                    operForm.attr("action", "/board/list");
+                    operForm.submit();
+                });
+
+                let modalObj = $(".modal");
+                let modalInputReply = modalObj.find('input[name="reply"]');
+                let modalInputReplyer = modalObj.find('input[name="replyer"]');
+                let modalInputReplyDate = modalObj.find('input[name="replyDate"]');
+
+                let modalModBtn = modalObj.find('#modalModBtn');
+                let modalRemoveBtn = modalObj.find('#modalRemoveBtn');
+                let modalRegisterBtn = modalObj.find('#modalRegisterBtn');
+                let modalCloseBtn = modalObj.find('#modalCloseBtn');
+
+                $("#addReplyBtn").on("click", function () {
+                    modalInputReplyDate.closest("div").hide();
+                    modalObj.find('button[id != "modalCloseBtn"]').hide();
+                    modalRegisterBtn.show();
+                    $(".modal").modal("show");
+                });
+
+                modalRegisterBtn.on("click", function () {
+                    let reply = {
+                        reply: modalInputReply.val(),
+                        replyer: modalInputReplyer.val(),
+                        bno: [[${formData.bno}]]
+                    };
+
+                    replyService.add(reply, function (result) {
+                        alert(result);
+                        modalObj.find("input").val("");
+                        modalObj.modal("hide");
+                        showList(1);
+                    },
+                        function (err) {
+                            alert(err);
+                        });
+                });
+
+                modalCloseBtn.on("click", function () {
+                    modalObj.modal("hide");
+                });
+
+                $(".chat").on("click", "li", function () {
+                    let rno = $(this).data("rno");
+                    replyService.get(rno, function (response) {
+                        modalInputReply.val(response.reply);
+                        modalInputReplyer.val(response.replyer);
+                        let replyDate = replyService.displayTime(response.replyDate)
+                        modalInputReplyDate.val(replyDate).attr("readonly", "readonly");
+                        modalObj.data("rno", response.rno);
+
+                        modalObj.find('button[id != "modalCloseBtn"]').hide();
+                        modalModBtn.show();
+                        modalRemoveBtn.show();
+                        $(".modal").modal("show");
+                    });
+                });
+
+                modalModBtn.on("click", function () {
+                    let reply = {
+                        rno: modalObj.data("rno"),
+                        reply: modalInputReply.val(),
+                        replyer: modalInputReplyer.val()
+                    };
+                    replyService.update(reply,
+                        function (response) {
+                            alert(response);
+                            modalObj.modal("hide");
+                            showList(1);
+                        },
+                        function (error) {
+                            alert(error);
+                        });
+                });
+
+                modalRemoveBtn.on("click", function () {
+                    let rno = modalObj.data("rno");
+                    replyService.remove(rno,
+                        function (response) {
+                            alert(response);
+                            modalObj.modal("hide");
+                            showList(1);
+                        },
+                        function (error) {
+                            alert(error);
+                        });
+                });
+
+                $(".uploadResult").on("click", "li", function (e) {
+                    console.log("view image");
+                    let liObj = $(this);
+                    if (liObj.data("type")) {
+                        showImage(liObj.data("fileid"));
+                    } else {
+                        self.location = `https://drive.google.com/uc?id=${liObj.data("fileid")}&export=download`;
+                    }
+                });
+
+                $(".bigPictureWrapper").on("click", function (e) {
+                    $(".bigPicture").animate({ width: "0%", height: "0%" }, 1000);
+                    setTimeout(function () {
+                        $(".bigPictureWrapper").hide();
+                    }, 1000);
+                });
+
+                $(".panel-footer").on("click", "li a", function (e) {
+                    e.preventDefault();
+                    let moveToPageNum = $(this).attr("href");
+                    showList(moveToPageNum);
+                });
+
+            }); /* $(document).ready */
+
+            function showImage(fileId) {
+                $(".bigPictureWrapper").css("display", "flex").show();
+                $(".bigPicture").html(`<img src='https://drive.google.com/open?id=${fileId}'>`).animate({ width: "100%", height: "100%" }, 1000);
+            }
+
+            function showList(page) {
+                let bno = [[${ formData.bno }]];
+                let replyUL = $(".chat");
+                replyService.getList({ bno: bno, page: page || 1 }, function (replyCnt, list) {
+                    if (list == null || list.length == 0) {
+                        replyUL.html("");
+                        showReplyPage(page, replyCnt);
+                        return;
+                    }
+
+                    let str = "";
+                    let replyObj;
+                    let displayTime;
+                    for (let i = 0; i < list.length; i++) {
+                        replyObj = list[i];
+                        displayTime = replyService.displayTime(replyObj.replyDate);
+                        str +=
+                            `<li class="left clearfix-fix" data-rno="${replyObj.rno}">
+                                    <div class="header">
+                                        <strong class="primary-font">${replyObj.replyer}</strong>
+                                        <small class="pull-right text-muted">${displayTime}</small>
+                                    </div>
+                                    <p>${replyObj.reply}</p>
+                            </li>
+                            <hr>
+                            `;
+                    }
+                    replyUL.html(str);
+                    showReplyPage(page, replyCnt);
+                });
+            }
+
+            function showReplyPage(page, replyCnt) {
+                let pageNum = Number.parseInt(page);
+                let endPage = Math.ceil(pageNum / 10.0) * 10;
+                let startPage = endPage - (10 - 1);
+
+                let realEnd = Math.ceil(replyCnt / 10.0);
+                if (realEnd < endPage) {
+                    endPage = realEnd;
+                }
+
+                let prev = startPage > 1;
+                let next = endPage < realEnd;
+
+                let str = '';
+                str += `<ul class="pagination">`;
+                if (prev) {
+                    str += `<li class="page-item">
+                                <a href="${startPage - 1}" class="page-link">
+                                    <span aria-hidden="true">«</span>
+                                </a>
+                            </li>`;
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    let active = pageNum === i ? 'active' : '';
+                    str += `<li class="${active} page-item"><a href="${i}" class="page-link">${i}</a></li>`;
+                }
+
+                if (next) {
+                    str += `<li class="page-item">
+                                <a href="${endPage + 1}" class="page-link"">
+                                    <span aria-hidden="true">»</span>
+                                </a>
+                            </li>
+                        `;
+                }
+                str += `</ul>`;
+
+                let replyPageFooter = $(".panel-footer");
+                replyPageFooter.html(str);
+            }
+        </script>
+    </th:block>
+</body>
+
+</html>

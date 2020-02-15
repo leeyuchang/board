@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.BoardMapper">
+
+    <sql id="criteria">
+        <trim prefix="where (" suffix=") " prefixOverrides="OR">
+            <foreach collection="typeArr" item="type">
+                <trim prefix="OR">
+                    <choose>
+                        <when test="type=='T'.toString()">
+                            title like '%' || #{keyword} || '%'
+                        </when>
+                        <when test="type=='C'.toString()">
+                            content like '%' || #{keyword} || '%'
+                        </when>
+                        <when test="type=='W'.toString()">
+                            writer like '%' || #{keyword} || '%'
+                        </when>
+                    </choose>
+                </trim>
+            </foreach>
+        </trim>
+    </sql>
+
+    <select id="getListWithPaging" resultType="com.example.demo.domain.BoardVO">
+        select bno, title, content, writer, regdate, updatedate, replycnt 
+            from 
+                tbl_board
+        <include refid="criteria"></include>
+        order by bno desc offset(#{pageNum}-1)*#{amount} limit #{amount}
+    </select>
+
+    <insert id="insert">
+        <selectKey keyProperty="bno" order="BEFORE" resultType="long">
+            select nextval('seq_board')
+        </selectKey>
+        insert into tbl_board (bno, title, content, writer)  
+               values (#{bno},#{title},#{content},#{writer})
+    </insert>
+
+    <select id="select" parameterType="long" resultType="com.example.demo.domain.BoardVO">
+        select * from tbl_board where bno = #{bno}
+    </select>
+
+    <delete id="delete">
+        delete from tbl_board where bno = #{bno}
+    </delete>
+
+    <update id="update" parameterType="com.example.demo.domain.BoardVO">
+        update tbl_board set title=#{title}, content=#{content}, writer=#{writer}, updatedate=current_timestamp where bno=#{bno}
+    </update>
+
+    <select id="getTotalCount" parameterType="com.example.demo.domain.Criteria" resultType="int">
+        select count(bno) from tbl_board
+        <include refid="criteria"></include>
+    </select>
+
+    <update id="updateReplyCnt">
+        update tbl_board set replycnt = (select count(rno) from tbl_reply where bno = #{bno}) where bno = #{bno}
+    </update>
+</mapper>

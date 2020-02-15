@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/layout}">
+
+<head>
+    <title>Home</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <iframe 
+        style="position:fixed; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;" 
+        src="https://docs.google.com/document/d/e/2PACX-1vS5qJKffrxL4tL2FiHECL4Te7qFHXK4Frtk7ypAXS9WTbE41NamaX9pdfC-juzfujikhc_zLOp1p_MG/pub?embedded=true"></iframe>
+    </div>
+</body>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+    </script>
+</th:block>
+</html>

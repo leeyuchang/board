@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" layout:decorate="~{layouts/layout}">
+
+<head>
+    <title>Home</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">[[#{label.login}]]</div>
+                    <div class="panel-body">
+                        <form th:action="@{/login}" method="post" th:object="${formData}">
+                            <fieldset>
+                                <div class="form-group">
+                                    <label for="userid">[[#{label.login.id}]]</label>
+                                    <input th:field="*{userid}" class="form-control" type="text" placeholder="ID"
+                                        autofocus /><br />
+                                    <span th:if="${#fields.hasErrors('userid')}" th:errors="*{userid}"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="userpw">[[#{label.login.pw}]]</label>
+                                    <input th:field="*{userpw}" class="form-control" type="password" placeholder="Password" /><br />
+                                    <span th:if="${#fields.hasErrors('userpw')}" th:errors="*{userpw}"></span>
+                                </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input name="remember" type="checkbox" value="Remember Me">Remember Me
+                                    </label>
+                                </div>
+                                <button class="btn btn-lg btn-light btn-block" type="submit">[[#{label.btn.login}]]</button>
+                            </fieldset>
+                        </form>
+                        <br>
+                        <a th:href="@{'/signup'}">[[#{label.link.signup}]]</a>
+                    </div> <!-- class="panel-body" -->
+                </div> <!-- class="panel panel-default" -->
+            </div> <!-- class="col-lg-12" -->
+        </div> <!-- class="row" -->
+    </div> <!-- layout:fragment="content" -->
+
+    <th:block layout:fragment="script">
+        <script th:inline="javascript">
+            $(document).ready(function () {
+
+                let result = [[${ result }]];
+                if (result == '' || history.state || result == null) {
+                    return;
+                }
+
+                alert(result);
+                history.replaceState({}, null, null);
+
+            });
+        </script>
+    </th:block>
+</body>
+
+</html>

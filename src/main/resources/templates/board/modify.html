@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layouts/layout}">
+
+<head>
+    <title>Home</title>
+    <style>
+        .uploadResult {
+            width: 100%;
+            background-color: gray;
+        }
+
+        .uploadResult ul {
+            display: flex;
+            flex-flow: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .uploadResult ul li {
+            list-style: none;
+            padding: 10px;
+            align-content: center;
+            text-align: center;
+        }
+
+        .uploadResult ul li img {
+            width: 100px;
+        }
+
+        .uploadResult ul li span {
+            color: white;
+        }
+
+        .bigPictureWrapper {
+            position: absolute;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            top: 0%;
+            width: 100%;
+            height: 100%;
+            background-color: gray;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .bigPicture {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bigPicture img {
+            width: 600px;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">Board Modify Page</div>
+                    <div class="panel-body" th:object="${formData}">
+                        <form role="form" method="POST">
+                            <div class="form-group">
+                                <label th:text="#{label.bno}"></label>
+                                <input th:field="*{bno}" class="form-control" readonly>
+                            </div>
+
+                            <div class="form-group" th:classappend="${#fields.hasErrors('title')} ? 'has-error has-feedback'">
+                                <label th:text="#{label.title}" for="title"></label>
+                                <input th:field="*{title}" id="title" class="form-control">
+                                <span  th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="help-block with-errors"></span>
+                            </div>
+            
+                            <div class="form-group" th:classappend="${#fields.hasErrors('content')} ? 'has-error has-feedback'">
+                                <label th:text="#{label.content}" for="content"></label>
+                                <textarea th:field="*{content}" rows="5" id="content" class="form-control"></textarea>
+                                <span  th:if="${#fields.hasErrors('content')}" th:errors="*{content}" class="help-block with-errors"></span>
+                            </div> 
+            
+                            <div class="form-group" th:classappend="${#fields.hasErrors('writer')} ? 'has-error has-feedback'">
+                                <label th:text="#{label.writer}"></label>
+                                <input th:field="*{writer}" class="form-control" readonly>
+                                <span th:if="#{#fields.hasErrors('writer')}" th:errors="*{writer}" class="help-block with-errors"></span>
+                            </div>
+            
+                            <div class="form-group">
+                                <label th:text="#{label.regdate}"></label>
+                                <input th:field="*{regdate}" class="form-control" readonly>
+                            </div>
+            
+                            <div class="form-group">
+                                <label th:text="#{label.updateDate}"></label>
+                                <input th:field="*{updateDate}" class="form-control" readonly>
+                            </div>
+            
+                            <button data-oper="modify" class="btn btn-default">[[#{label.btn.modify}]]</button>
+                            <button data-oper="remove" class="btn btn-danger">[[#{label.btn.remove}]]</button>
+                            <button data-oper="list" class="btn btn-info">[[#{label.btn.list}]]</button>
+                            
+                            <input type="hidden" name="pageNum" th:value="${cri.pageNum}">
+                            <input type="hidden" name="amount" th:value="${cri.amount}">
+                            <input type="hidden" name="type" th:value="${cri.type}">
+                            <input type="hidden" name="keyword" th:value="${cri.keyword}">
+                        </form>
+                    </div> <!-- class="panel-body" -->
+                </div> <!-- class="panel panel-default" -->
+            </div> <!-- class="col-lg-12" -->
+        </div> <!-- class="row" -->
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">File Attach</div>
+                    <div class="panel-body">
+                        <div class="form-group uploadDiv">
+                            <input type="file" name="uploadFile" multiple>
+                            <div class="uploadResult">
+                                <ul>
+                                </ul>
+                            </div> <!-- end uploadResult -->
+                        </div> <!-- end form-grop uploadDiv -->
+                    </div> <!-- end panel-body -->
+                </div> <!-- end panel-default -->
+            </div>
+        </div> <!-- end class="row" -->
+
+    </div> <!-- layout:fragment="content" -->
+
+    <th:block layout:fragment="script">
+        <script th:inline="javascript">
+            $(document).ready(function () {
+                let eventSource = new EventSource('/uploadResult');
+
+                eventSource.onerror = function (e) {
+                    // in case of stop by Client Back Button
+                    eventSource.close();
+                };
+
+                eventSource.addEventListener('message', function (e) {
+                    // const { fileId, fileName, fileType } = JSON.parse(e.data);
+                    console.log(e.data);
+                    let result = JSON.parse(e.data);
+                    showUploadedFile(result);
+                });
+
+                eventSource.addEventListener('close', function (e) {
+                    console.log('close called by the server');
+                    eventSource.close();
+                });
+
+                (function () {
+                    let bno = [[${formData.bno}]];
+                    $.getJSON('/board/getAttachList', { bno: bno }, function (result) {
+                        let str = '';
+
+                        $(result).each(function (i, attach) {
+                            const { fileId, fileName, fileType, folderName } = attach;
+                            if (fileType) {
+                                str += `
+                                <li data-fileId="${fileId}" data-fileName="${fileName}" data-fileType="${fileType}" data-folderName="${folderName}">
+                                    <div>
+                                        <span>${fileName}</span>
+                                        <button type="button" data-fileId="${fileId}" data-fileType="image" class="btn btn-warning btn-circle">
+                                            <i class="fa fa-times">
+                                            </i>
+                                        </button>
+                                        <br/>
+                                        <img src="/display?fileId=${fileId}">
+                                    </div>
+                                </li>
+                                `;
+                            } else {
+                                str += `
+                                <li data-fileId="${fileId}" data-fileName="${fileName}" data-fileType="${fileType}" data-folderName="${folderName}">
+                                    <div>
+                                        <span>${fileName}</span>
+                                        <button type="button" data-fileId="${fileId}" data-fileType="file" class="btn btn-warning btn-circle">
+                                            <i class="fa fa-times">
+                                            </i>
+                                        </button>
+                                        <br/>
+                                        <img src="/img/attach.png">
+                                    </div>
+                                </li>
+                                `;
+                            }
+                        });
+                        $(".uploadResult ul").html(str);
+                    }); //end $getJSON
+                })(); // end function
+
+                $(".uploadResult").on("click", "button", function () {
+                    console.log("delete file");
+                    if (confirm([[#{confirm.msg}]])) {
+                        let liObj = $(this).closest("li");
+                        liObj.remove();
+                    }
+                }); /* end $(".uploadResult").on */
+
+                let formObj = $("form");
+
+                $("button").on("click", function () {
+                    let operation = $(this).data("oper");
+
+                    if (operation === 'list') {
+                        let pageNumClone = formObj.find('input[name="pageNum"]').clone();
+                        let amountClone = formObj.find('input[name="amount"]').clone();
+                        let typeClone = formObj.find('input[name="type"]').clone();
+                        let keywordClone = formObj.find('input[name="keyword"]').clone();
+
+                        formObj.empty();
+                        formObj
+                            .attr("action", "/board/list")
+                            .attr("method", "get")
+                            .append(pageNumClone)
+                            .append(amountClone)
+                            .append(typeClone)
+                            .append(keywordClone);
+
+                    } else if (operation === "modify") {
+                        console.log("modify click");
+
+                        let str = "";
+
+                            $(".uploadResult ul li").each(function (i, obj) {
+                                let jobj = $(obj);
+                                console.dir(jobj);
+                                let fileId = jobj.data("fileid");
+                                let fileName = jobj.data("filename");
+                                let fileType = jobj.data("filetype");
+                                let folderName = jobj.data("foldername");
+                                str += `
+                            <input type="hidden" name="attachList[${i}].fileId" value="${fileId}">
+                            <input type="hidden" name="attachList[${i}].fileName" value="${fileName}">
+                            <input type="hidden" name="attachList[${i}].fileType" value="${fileType}">
+                            <input type="hidden" name="attachList[${i}].folderName" value="${folderName}"> 
+                            `;
+                            });
+                            
+                        formObj.append(str);
+                        formObj.attr("action", "/board/modify");
+                        formObj.submit();
+
+                    } else if (operation === "remove") {
+                        formObj.attr("action", "/board/remove");
+                    }
+                    formObj.submit();
+                }); /* end $("button").on */
+
+                $('input[type="file"]').change(function () {
+                    let formData = new FormData();
+                    let inputFile = $('input[name="uploadFile"]');
+                    let files = inputFile[0].files;
+                    for (let i = 0; i < files.length; i++) {
+                        if (!checkExtension(files[i].name, files[i].size)) {
+                            return false;
+                        }
+                        formData.append("uploadFile", files[i]);
+                    }
+                    $.ajax({
+                        type: 'POST',
+                        enctype: 'multipart/form-data',
+                        url: '/uploadAjax',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
+                        success: function (result) {
+                            // Do nothing
+                        }
+                    }); /* end $.ajax  */
+                }); /* end $('input[type="file"]').change */
+
+                function showUploadedFile(uploadResultArr) {
+                    let str = "";
+                    $(uploadResultArr).each(function (i, obj) {
+                        if (!obj.fileType) {
+                            str += `<li data-fileId="${obj.fileId}" data-fileName="${obj.fileName}" data-fileType="${obj.fileType}" data-folderName="${obj.folderName}">
+                                    <div>
+                                        <span>${obj.fileName}</span>
+                                        <button type="button" data-fileId="${obj.fileId}" data-fileType="file" class="btn btn-warning btn-circle btn-sm">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                        <br>
+                                        <img src="/img/attach.png">
+                                    </div>
+                                </li>`;
+                        } else {
+                            str += `<li data-fileId="${obj.fileId}" data-fileName="${obj.fileName}" data-fileType="${obj.fileType}" data-folderName="${obj.folderName}">
+                                    <div>
+                                        <span>${obj.fileName}</span>
+                                        <button type="button" data-fileId="${obj.fileId}" data-fileType="image" class="btn btn-warning btn-circle btn-sm">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                        <br>
+                                        <img src="/display?fileId=${obj.fileId}">
+                                    </div>
+                                </li>`;
+                        }
+                    });
+                    let uplodaUL = $(".uploadResult ul");
+                    uplodaUL.append(str);
+                } /* end function showUploadedFile */
+
+                function checkExtension(fileName, fileSize) {
+                    let regex = new RegExp("(.*?)\.(exe|zip|sh|alz)$");
+                    let maxSize = 1024 * 1024 * 5; // 5MB
+
+                    if (regex.test(fileName)) {
+                        alert([[#{alert.msg.file.extention}]]);
+                        return false;
+                    }
+
+                    if (fileSize > maxSize) {
+                        alert([[#{ alert.msg.file.maxsize }]]);
+                        return false;
+                    }
+                    return true;
+                } /* end function checkExtension */
+
+            }); /* end $(document).ready */
+        </script>
+    </th:block>
+</body>
+
+</html>

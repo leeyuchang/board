@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" 
+    layout:decorate="~{layouts/layout}">
+
+<head>
+    <title>Register</title>
+    <style>
+        .uploadResult {
+            width: 100%;
+            background-color: gray;
+        }
+        
+        .uploadResult ul {
+            display: flex;
+            flex-flow: row;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .uploadResult ul li {
+            list-style: none;
+            padding: 10px;
+        }
+        
+        .uploadResult ul li img {
+            width: 100px;
+        }
+        </style>
+        
+        <style>
+        .bigPictureWrapper {
+          position: absolute;
+          display: none;
+          justify-content: center;
+          align-items: center;
+          top:0%;
+          width:100%;
+          height:100%;
+          background-color: gray; 
+          z-index: 100;
+        }
+        
+        .bigPicture {
+          position: relative;
+          display:flex;
+          justify-content: center;
+          align-items: center;
+        }
+        </style>
+        <link rel="shortcut icon" href="">
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">Register Page</div>
+                    <div class="panel-body" th:object="${formData}">
+                        <form role="form" th:action="@{/board/register}" method="POST">
+                            <div class="form-group" th:classappend="${#fields.hasErrors('title')} ? 'has-error has-feedback'">
+                                <label for="title" th:text="#{label.title}"></label>
+                                <input id="title" class="form-control" th:field="*{title}">
+                                <span class="help-block with-errors" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
+                            </div>
+                            <div class="form-group" th:classappend="${#fields.hasErrors('content')} ? 'has-error'">
+                                <label for="content" th:text="#{label.content}"></label>
+                                <textarea id="content" class="form-control" th:field="*{content}" rows="5"></textarea>
+                                <span class="help-block with-errors" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></span>
+                            </div>
+                            <div class="form-group" th:classappend="${#fields.hasErrors('writer')} ? 'has-error'">
+                                <label for="writer" th:text="#{label.writer}"></label>
+                                <!-- <input id="writer" class="form-control" th:name="writer" th:value="${#authentication.principal.member.userName}" readonly>                         -->
+                                <input id="writer" class="form-control" th:name="writer" th:field="*{writer}">                        
+                                <span class="help-block with-errors" th:if="${#fields.hasErrors('writer')}" th:errors="*{writer}"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary" th:text="#{label.btn.submit}"></button>
+                            <button type="reset" class="btn btn-warning" th:text="#{label.btn.reset}"></button>
+                            <button type="button" class="btn btn-info" th:text="#{label.btn.list}"></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">File Attach</div>
+                    <div class="panel-body">
+                        <div class="form-group uploadDiv">
+                            <input type="file" name="uploadFile" class="form-control-file" multiple>
+                            <div class="uploadResult">
+                                <ul>
+                                </ul>
+                            </div> <!-- end uploadResult -->
+                        </div> <!-- end form-grop uploadDiv -->
+                    </div> <!-- end panel-body -->
+                </div> <!-- end panel-default -->
+            </div>
+        </div> <!-- end class="row" -->
+
+    </div>
+
+    <th:block layout:fragment="script">
+        <script th:inline="javascript">
+            $(document).ready(function () {
+
+                // let csrfHeaderName="${_csrf.headerName}";
+                // let csrfTokenValue="${_csrf.token}";
+
+                // 
+
+                let eventSource = new EventSource('/uploadResult');
+
+                eventSource.onerror = function (e) {
+                    // in case of stop by Client Back Button
+                    eventSource.close();
+                };
+
+//                 eventSource.addEventListener('error', function (e) {
+
+//                     console.log('EventListener on error :' + e);;
+// /* 
+
+//                     if (e.currentTarget.readyState == EventSource.CLOSED) {
+//                         eventSource.close();
+//                     } else {
+//                         eventSource.close();
+//                     }
+//                     */ 
+//                 });
+
+                eventSource.addEventListener('message', function (e) {
+                    // const { fileId, fileName, fileType } = JSON.parse(e.data);
+                    console.log(e.data);
+                    let result = JSON.parse(e.data);
+                    showUploadedFile(result);
+                });
+
+                eventSource.addEventListener('close', function (e) {
+                    console.log('close called by the server');
+                    eventSource.close();
+                });
+
+                // 
+                $('button[type="button"]').on("click", function () {
+                    let params = new URLSearchParams();
+                    let baseUrl = "/board/list";
+                    params.append("pageNum", [[${cri.pageNum}]]);
+                    params.append("amount", [[${cri.amount}]]);
+                    if ([[${ cri.type }]] != null) {
+                        params.append("type", [[${ cri.type }]]);
+                    }
+                    if ([[${ cri.keyword }]] != null) {
+                        params.append("keyword", [[${ cri.keyword }]]);
+                    }
+                    self.location = [baseUrl, "?", params].join("");
+                });
+
+                let formObj = $("form[role='form']");
+                $("button[type='submit']").on("click", function (e) {
+                    e.preventDefault();
+                    console.log("submit clicked");
+                 
+                    let str = "";
+
+                    $(".uploadResult ul li").each(function(i, obj) {
+                        
+                        // 
+                        let jobj = $(obj);
+                        // let jobj = obj;
+                        
+                        let fileId = jobj.data("fileid");
+                        let fileName = jobj.data("filename");
+                        let fileType = jobj.data("filetype");
+                        let folderName = jobj.data("foldername");
+                        
+                        str += ` 
+                        <input type="hidden" name="attachList[${i}].fileId" value="${fileId}">
+                        <input type="hidden" name="attachList[${i}].fileName" value="${fileName}">
+                        <input type="hidden" name="attachList[${i}].fileType" value="${fileType}">
+                        <input type="hidden" name="attachList[${i}].folderName" value="${folderName}">
+                        `;
+                    });
+                    formObj.append(str);
+                    formObj.submit();
+                });
+
+                $('input[type="file"]').change(function (e) {
+                    let formData = new FormData();
+                    let inputFile = $('input[ name="uploadFile"]');
+                    let files = inputFile[0].files;
+                    for (let i = 0; i < files.length; i++) {
+                        if (!checkExtension(files[i].name, files[i].size)) {
+                            return false;
+                        }
+                        formData.append("uploadFile", files[i]);
+                    }
+
+                    $.ajax({
+                        type: 'post',
+                        enctype: 'multipart/form-data',
+                        url: '/uploadAjax',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
+                        success: function (result) {
+                            $('input[ name="uploadFile"]').val('');
+                        }
+                    })
+                });
+
+                $(".uploadResult").on("click", "button", function () {
+                    console.log("delete file");
+                    let fileId = $(this).data('fileId');
+                    let deleteLi = $(this).closest('li');
+
+                    $.ajax({
+                        url: '/deleteFile',
+                        data: { fileId: fileId },
+                        // dataType: 'text',
+                        type: 'post',
+                        success: function (result) {
+                            // alert(result);
+                            deleteLi.remove();
+                        }
+                    });
+                });
+
+            }); /* $(document).ready(function () {}) */
+
+            function showUploadedFile(uploadResultArr) {
+                let str = "";
+                $(uploadResultArr).each(function (i, obj) {
+                    if (!obj.fileType) {
+                        str += `<li data-fileId="${obj.fileId}" data-fileName="${obj.fileName}" data-fileType="${obj.fileType}" data-folderName="${obj.folderName}">
+                                    <div>
+                                        <span>${obj.fileName}</span>
+                                        <button type="button" data-fileId="${obj.fileId}" data-fileType="file" class="btn btn-warning btn-circle btn-sm">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                        <br>
+                                        <img src="/img/attach.png">
+                                    </div>
+                                </li>`;
+                    } else {
+                        str += `<li data-fileId="${obj.fileId}" data-fileName="${obj.fileName}" data-fileType="${obj.fileType}" data-folderName="${obj.folderName}">
+                                    <div>
+                                        <span>${obj.fileName}</span>
+                                        <button type="button" data-fileId="${obj.fileId}" data-fileType="image" class="btn btn-warning btn-circle btn-sm">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                        <br>
+                                        <img src="/display?fileId=${obj.fileId}">
+                                    </div>
+                                </li>`;
+                    }
+                });
+                let uplodaUL = $(".uploadResult ul");
+                uplodaUL.append(str);
+            }
+
+            function checkExtension(fileName, fileSize) {
+                let regex = new RegExp("(.*?)\.(exe|zip|sh|alz)$");
+                let maxSize = 1024 * 1024 * 5; // 5MB
+
+                if (regex.test(fileName)) {
+                    alert([[#{alert.msg.file.extention}]]);
+                    return false;
+                }
+
+                if (fileSize > maxSize) {
+                    alert([[#{alert.msg.file.maxsize}]]);
+                    return false;
+                }
+                return true;
+            }
+
+        </script>
+    </th:block>
+</body>
+
+</html>

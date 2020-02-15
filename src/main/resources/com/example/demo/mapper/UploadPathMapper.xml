@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.UploadPathMapper">
+
+	<resultMap id="uploadPathVoMap" type="com.example.demo.domain.UploadPathVO">
+		<result property="id" column="id" />
+		<result property="root" column="root" />
+		<result property="year" column="year" />
+		<result property="month" column="month" />
+		<result property="day" column="day" />
+	</resultMap>
+	<delete id="truncate">
+		truncate tbl_upload_path
+	</delete>
+
+	<insert id="insert" parameterType="com.example.demo.domain.UploadPathVO">
+		insert into tbl_upload_path(id, root,year,month,day) values(#{id},#{root},#{year},#{month},#{day})
+	</insert>
+
+	<select id="select" resultMap="uploadPathVoMap">
+		select id, root, year, month, day from tbl_upload_path order by id desc limit 1
+	</select>
+
+	<select id="getYesterDayFolder" resultMap="uploadPathVoMap">
+		SELECT 
+		  * 
+		  from 
+			tbl_upload_path 
+		  where 
+			TO_CHAR(id, 'yyyy/mm/dd') like TO_CHAR(current_timestamp + '-1 days', 'yyyy/mm/dd')
+	  </select>
+
+</mapper>

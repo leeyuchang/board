@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <form>
+        <input type="file" id="upfile" multiple>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        // let upfile = document.getElementById('upfile');
+        // let result = document.getElementById('result');
+
+        // upfile.addEventListener('change', function (e) {
+        //     let f = upfile.files[0];
+        //     let data = new FormData();
+        //     data.append('upfile', f, f.name);
+        //     fetch('http://localhost:8080/uploadpost', {
+        //         method: 'POST',
+        //         body: data
+        //     }).then(function (response) {
+        //         return response.text();
+        //     }).then(function (text) {
+        //         result.textContent = text;
+        //     });
+        // }, false);
+        $(document).ready(function () {
+
+            $("#upfile").on('change', function () {
+
+                let formData = new FormData();
+                let inputFile = $(this);
+
+                let files = inputFile[0].files;
+
+                console.log(files);
+
+                for(let i=0;i<files.length;i++){
+                    formData.append("upfile", files[i]);
+                }
+
+                $.ajax({
+                    url: '/uploadpost',
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    type: 'post',
+                    // dataType: 'json',
+                    success: function (result) {
+                        $('#result').text(result);
+                    }
+                });
+
+            });
+        });
+    </script>
+</body>
+
+</html>

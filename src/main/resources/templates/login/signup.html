@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html   xmlns:th="http://www.thymeleaf.org" 
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        xmlns:sec="http://www.thymeleaf.org/extras/spring-security" 
+        layout:decorate="~{layouts/layout}">
+
+<head>
+    <title>Home</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">ユーザー登録画面</div>
+                    <div class="panel-body">
+                        <form method="post" th:action="@{/signup}" th:object="${signupForm}">
+                            <table class="table table-bordered table-hover">
+                                <tr>
+                                    <th class="active col-sm-3" th:text="#{userid.message}"></th>
+                                    <td>
+                                        <div class="form-group" th:classappend="${#fields.hasErrors('userid')} ? 'has-error'">
+                                            <input type="text" class="form-control" th:field="*{userid}" />
+                                            <span class="text-danger" th:if="${#fields.hasErrors('userid')}" th:errors="*{userid}"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="active" th:text="#{userpw.message}"></th>
+                                    <td>
+                                        <div class="form-group" th:classappend="${#fields.hasErrors('userpw')} ? 'has-error'">
+                                            <input type="text" class="form-control" th:field="*{userpw}" />
+                                            <span class="text-danger" th:if="${#fields.hasErrors('userpw')}" th:errors="*{userpw}"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="active" th:text="#{userName.message}">ユーザー名</th>
+                                    <td>
+                                        <div class="form-group" th:classappend="${#fields.hasErrors('userName')} ? 'has-error'">
+                                            <input type="text" class="form-control" th:field="*{userName}" />
+                                            <span class="text-danger" th:if="${#fields.hasErrors('userName')}" th:errors="*{userName}">userName error</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <!-- ユーザー登録ボタン -->
+                            <button class="btn btn-primary" type="submit">ユーザー登録</button>
+                        </form>
+                    </div> <!-- class="panel-body" -->
+                </div> <!-- class="panel panel-default" -->
+            </div> <!-- class="col-lg-12" -->
+        </div> <!-- class="row" -->
+    </div> <!-- layout:fragment="content" -->
+
+    <th:block layout:fragment="script">
+        <script th:inline="javascript">
+        // Input your javascript 
+        </script>
+    </th:block>
+</body>
+
+</html>
