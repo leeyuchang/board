@@ -1,7 +1,5 @@
 package com.example.demo.config;
 
-import java.util.concurrent.TimeUnit;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -13,7 +11,6 @@ public class AsyncConfiguration implements WebMvcConfigurer {
 
   @Override
   public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
-    configurer.setDefaultTimeout(TimeUnit.SECONDS.toMinutes(10_000));
     configurer.setTaskExecutor(taskExecutor());
   }
 
@@ -21,8 +18,8 @@ public class AsyncConfiguration implements WebMvcConfigurer {
   public ThreadPoolTaskExecutor taskExecutor() {
     ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
     taskExecutor.setThreadGroupName("mvc-threadPoolTaskExecutor");
-    taskExecutor.setCorePoolSize(50);
-    taskExecutor.setMaxPoolSize(50);
+    taskExecutor.setCorePoolSize(14);
+    taskExecutor.setMaxPoolSize(14);
     taskExecutor.setAllowCoreThreadTimeOut(true);
     taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
     return taskExecutor;

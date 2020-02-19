@@ -110,41 +110,19 @@
                 // let csrfHeaderName="${_csrf.headerName}";
                 // let csrfTokenValue="${_csrf.token}";
 
-                // 
-
                 let eventSource = new EventSource('/uploadResult');
-
-                eventSource.onerror = function (e) {
-                    // in case of stop by Client Back Button
-                    eventSource.close();
-                };
-
-//                 eventSource.addEventListener('error', function (e) {
-
-//                     console.log('EventListener on error :' + e);;
-// /* 
-
-//                     if (e.currentTarget.readyState == EventSource.CLOSED) {
-//                         eventSource.close();
-//                     } else {
-//                         eventSource.close();
-//                     }
-//                     */ 
-//                 });
 
                 eventSource.addEventListener('message', function (e) {
                     // const { fileId, fileName, fileType } = JSON.parse(e.data);
                     console.log(e.data);
-                    let result = JSON.parse(e.data);
-                    showUploadedFile(result);
+                    showUploadedFile(JSON.parse(e.data));
                 });
 
                 eventSource.addEventListener('close', function (e) {
                     console.log('close called by the server');
                     eventSource.close();
                 });
-
-                // 
+                
                 $('button[type="button"]').on("click", function () {
                     let params = new URLSearchParams();
                     let baseUrl = "/board/list";
@@ -207,8 +185,11 @@
                         processData: false,
                         contentType: false,
                         cache: false,
+                        dataType: 'json',
                         success: function (result) {
-                            $('input[ name="uploadFile"]').val('');
+                            // $('input[ name="uploadFile"]').val('');
+                            $('input[ name="uploadFile"]').hide('hide');
+                            eventSource.close();
                         }
                     })
                 });

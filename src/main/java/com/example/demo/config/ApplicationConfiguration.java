@@ -1,6 +1,7 @@
 package com.example.demo.config;
 
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
 import java.time.Duration;
 
 import com.example.demo.domain.AccessTokenInfo;
@@ -16,7 +17,8 @@ public class ApplicationConfiguration {
     public HttpClient httpClient() {
         return  HttpClient.newBuilder()
                           .version(HttpClient.Version.HTTP_2)
-                          .connectTimeout(Duration.parse("PT5S"))
+                          .connectTimeout(Duration.ofSeconds(5))
+                          .followRedirects(Redirect.NORMAL)
                           .build();
     }
 
@@ -26,8 +28,4 @@ public class ApplicationConfiguration {
         return new AccessTokenInfo();
     }
 
-/*     @Bean
-    public ErrorNotifier errorNotifier() {
-        return new EmailErrorNotifier();
-    } */
 }

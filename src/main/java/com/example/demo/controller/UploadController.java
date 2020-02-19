@@ -1,22 +1,19 @@
 package com.example.demo.controller;
 
-import static java.util.stream.Collectors.toList;
-
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpSession;
 
 import com.example.demo.domain.BoardAttachVO;
-import com.example.demo.domain.DriveFileResDTO;
 import com.example.demo.service.FileUploadService;
 import com.example.demo.service.UploadPathService;
 
@@ -52,89 +49,71 @@ public class UploadController {
     private Map<String, SseEmitter> emitterMap = new ConcurrentHashMap<>();
 
     @PostMapping("/uploadAjax")
-    public void uploadAjaxPost(MultipartFile[] uploadFile, HttpSession session) {
-
-        log.info("uploadFile START");
+    public ResponseEntity<List<BoardAttachVO>> uploadAjaxPost(MultipartFile[] uploadFile, HttpSession session) {
 
         var sessionId = session.getId();
+		log.info("start /upload with session : " + sessionId);
+		
+		long startTime = System.nanoTime();
 
-        log.info("uploadAjax started by " + sessionId);
+        var folderId = uploadPathService.getPath();
 
-        var folder = uploadPathService.getPath();
-
-        var list = Arrays.stream(uploadFile)
-                        .map(upFile -> CompletableFuture.supplyAsync(() -> fileUploadService.up(upFile, folder), executor)
-                                                        .thenApply(dto -> converDTOtoVO(dto, folder))
-                                                        .thenAccept(attach -> notify(sessionId, "message", attach))
-                                                        )
-                        .collect(toList());
-
-        CompletableFuture.allOf(list.toArray(new CompletableFuture[list.size()])).join();
-
-        // notify(sessionId, "close", BoardAttachVO.builder().build());
-
-        log.info("uploadFile END");
-    }
-
-    private BoardAttachVO converDTOtoVO(DriveFileResDTO dto, String folder) {
-        BoardAttachVO attach = new BoardAttachVO();
-        attach.setFileId(dto.getId());
-        attach.setFileName(dto.getName());
-        attach.setFileType(dto.getMimeType().startsWith("image"));
-        attach.setFolderName(folder);
-        return attach;
-    }
-
-    @GetMapping("/uploadResult")
-    public SseEmitter uploadResultAsync(HttpSession session) {
-
-        var sessionId = session.getId();
-
-        log.info("uploadResult started by " + sessionId);
-
-        var emitter = new SseEmitter(Duration.ofMinutes(10).toMillis());
-
-        emitterMap.put(sessionId, emitter);
-
-        emitter.onTimeout(() -> {
-            log.info("onTimeout    : " + sessionId + "/" + emitter.toString());
-            emitter.complete();
-        });
-
-        emitter.onCompletion(() -> {
-            log.info("onCompletion : emitterMap.before size(" + emitterMap.size() + ")");
-            emitterMap.entrySet().stream()
-                    .forEach((v) -> log.info("onCompletion : before " + v.getKey() + " / " + v.getValue()));
-
-            emitterMap.remove(sessionId);
-            log.info("onCompletion : Removed sessionId : " + sessionId);
-            log.info("onCompletion : emitterMap.after size(" + emitterMap.size() + ")");
-            emitterMap.entrySet().stream()
-                    .forEach((v) -> log.info("onCompletion : after " + v.getKey() + " / " + v.getValue()));
-        });
-
-        emitter.onError((e) -> log.info("★★★★onError★★★★" + e));
-        return emitter;
+		List<CompletableFuture<BoardAttachVO>> list = Arrays.stream(uploadFile)
+				.map(up -> CompletableFuture.supplyAsync(() -> fileUploadService.up(up, folderId), executor))
+				.collect(Collectors.toList());
+		
+        list.parallelStream()
+            .map(CompletableFuture::join)
+            .forEach(vo -> notify(sessionId, "message", vo));
+		
+		long endTime = (System.nanoTime() - startTime) / 1_000_000;
+		log.info("★ time cost : " + endTime + "msecs");
+		
+		notify(sessionId, "close", new BoardAttachVO());
+		
+		return new ResponseEntity<>(HttpStatus.OK);
     }
 
     private void notify(String sessionId, String event, BoardAttachVO attach) {
 
-        var emitter = emitterMap.get(sessionId);
+		var emitter = emitterMap.get(sessionId);
+		
+		if("close".equals(event)) {
+			emitter.complete();
+			emitterMap.remove(sessionId);
+			return;
+		}
 
-        try {
-            emitter.send(SseEmitter.event().name(event).data(attach));
-        } catch (IOException e) {
-            log.info("notify error on : " + e);
-            emitter.completeWithError(e);
-        }
-
-        if (Objects.equals(event, "close")) {
-            var emiiter = emitterMap.get(sessionId);
-            if (Objects.nonNull(emiiter)) {
-                emiiter.complete();
-            }
-        }
+		try {
+			emitterMap.get(sessionId).send(SseEmitter.event().name(event).data(attach));
+		} catch (IOException e) {
+			log.info("notify error on : " + e);
+			emitter.completeWithError(e);
+		}
     }
+    
+    @GetMapping("/uploadResult")
+	public SseEmitter uploadResultAsync(HttpSession session) {
+		
+		var sessionId = session.getId();
+        log.info("uploadResult started by " + sessionId);
+
+        var emitter = new SseEmitter(600000L);
+        
+        emitterMap.put(sessionId, emitter);
+        
+        emitter.onTimeout(() -> {
+            log.info("onTimeout    : " + sessionId + "/" + emitter.toString());
+            emitter.complete();
+        });
+        
+        emitter.onCompletion(() -> {
+            log.info("onCompletion");
+        });
+        
+        emitter.onError((e) -> log.info("★★★★onError★★★★" + e));
+        return emitter;
+	}
 
     @GetMapping("/display")
     public ResponseEntity<byte[]> getThumbnail(String fileId) {
