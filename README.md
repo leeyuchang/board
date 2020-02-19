@@ -8,4 +8,3 @@ https://rocky-mountain-53923.herokuapp.com/board/list
 "GOOGLE_CLIENT_REFRESH_TOKEN": "",
 "GOOGLE_CLIENT_REFRESH_TOKEN_URL": "https://www.googleapis.com/oauth2/v4/token",
 "DATABASE_URL": ""
-}
