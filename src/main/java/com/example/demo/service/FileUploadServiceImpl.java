@@ -29,17 +29,17 @@ import lombok.extern.java.Log;
 @Service
 public class FileUploadServiceImpl implements FileUploadService {
 
-        @Resource(name = "accessTokenInfo")
-        private AccessTokenInfo accessTokenInfo;
+	@Resource(name = "accessTokenInfo")
+	private AccessTokenInfo accessTokenInfo;
 
 	private final String boundary = "-------314159265358979323846";
 
 	private final String delimiter = "\r\n--" + boundary + "\r\n";
-	
+
 	private final String closeDelim = "\r\n--" + boundary + "--";
-	
+
 	private final String GOOGLE_DRIVE_URL = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
-	
+
 	private final UriComponents uri = UriComponentsBuilder
 			.fromHttpUrl(GOOGLE_DRIVE_URL)
 			.queryParam("fields", String.join(",", "id", "mimeType", "name"))
@@ -47,7 +47,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
 	@Autowired
 	private Gson gson;
-	
+
 	@Autowired
 	private HttpClient httpClient;
 
@@ -55,10 +55,11 @@ public class FileUploadServiceImpl implements FileUploadService {
 
 		Objects.requireNonNull(accessTokenInfo);
 		Objects.requireNonNull(file);
-		
+
 		log.info("★ " + file.getOriginalFilename());
 
-		var metaData = MetaData.builder()
+		var metaData = MetaData
+				.builder()
 				.name(file.getOriginalFilename())
 				.mimeType(file.getContentType())
 				.parents(Arrays.asList(folderId))
@@ -68,14 +69,13 @@ public class FileUploadServiceImpl implements FileUploadService {
 		try {
 			base64FileData = Base64.getEncoder().encodeToString(file.getBytes());
 		} catch (IOException e) {
-			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
 
 		var stringBuffer = new StringBuffer();
 
 		var multipartRequestBody = stringBuffer
-				.append(delimiter)
+		    .append(delimiter)
 				.append("content-type: application/json; charset=UTF-8\r\n\r\n")
 				.append(gson.toJson(metaData))
 				.append(delimiter)
@@ -97,17 +97,16 @@ public class FileUploadServiceImpl implements FileUploadService {
 			response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			log.info("" + response.body());
 		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		
-		if(!is2xx(response)) {
-			throw new RuntimeException(response.statusCode()+"");
+
+		if (!is2xx(response)) {
+			throw new RuntimeException(response.statusCode() + "");
 		}
-		
+
 		return convertDtoToVo(gson.fromJson(response.body(), DriveFileResDTO.class), folderId);
 	}
-	
+
 	private BoardAttachVO convertDtoToVo(DriveFileResDTO dto, String folderId) {
 		BoardAttachVO boardAttachVO = new BoardAttachVO();
 		boardAttachVO.setFileId(dto.getId());
@@ -116,7 +115,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 		boardAttachVO.setFolderName(folderId);
 		return boardAttachVO;
 	}
-	
+
 	private boolean is2xx(HttpResponse<String> res) {
 		return res.statusCode() >= 200 && res.statusCode() < 300;
 	}

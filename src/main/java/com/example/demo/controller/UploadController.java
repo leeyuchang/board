@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -52,83 +53,88 @@ public class UploadController {
     public ResponseEntity<List<BoardAttachVO>> uploadAjaxPost(MultipartFile[] uploadFile, HttpSession session) {
 
         var sessionId = session.getId();
-		log.info("start /upload with session : " + sessionId);
-		
-		long startTime = System.nanoTime();
+        log.info("start /upload with session : " + sessionId);
+
+        long startTime = System.nanoTime();
 
         var folderId = uploadPathService.getPath();
 
-		List<CompletableFuture<BoardAttachVO>> list = Arrays.stream(uploadFile)
-				.map(up -> CompletableFuture.supplyAsync(() -> fileUploadService.up(up, folderId), executor))
-				.collect(Collectors.toList());
-		
+        var list = Arrays.stream(uploadFile)
+                .map(up -> CompletableFuture.supplyAsync(() -> fileUploadService.up(up, folderId), executor))
+                .collect(Collectors.toList());
+
         list.parallelStream()
             .map(CompletableFuture::join)
             .forEach(vo -> notify(sessionId, "message", vo));
-		
-		long endTime = (System.nanoTime() - startTime) / 1_000_000;
-		log.info("★ time cost : " + endTime + "msecs");
-		
-		notify(sessionId, "close", new BoardAttachVO());
-		
-		return new ResponseEntity<>(HttpStatus.OK);
+
+        long endTime = (System.nanoTime() - startTime) / 1_000_000;
+        log.info("★ time cost : " + endTime + "msecs");
+
+        notify(sessionId, "close", new BoardAttachVO());
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     private void notify(String sessionId, String event, BoardAttachVO attach) {
 
-		var emitter = emitterMap.get(sessionId);
-		
-		if("close".equals(event)) {
-			emitter.complete();
-			emitterMap.remove(sessionId);
-			return;
-		}
+        // var emitter = emitterMap.get(sessionId);
 
-		try {
-			emitterMap.get(sessionId).send(SseEmitter.event().name(event).data(attach));
-		} catch (IOException e) {
-			log.info("notify error on : " + e);
-			emitter.completeWithError(e);
-		}
+        // if ("close".equals(event)) {
+        // emitter.complete();
+        // emitterMap.remove(sessionId);
+        // return;
+        // }
+
+        List<String> deadEmitters = new ArrayList<>();
+        emitterMap.forEach((k, v) -> {
+            if (k.equals(sessionId)) {
+                try {
+                    v.send(SseEmitter.event().name(event).data(attach));
+                } catch (IOException e) {
+                    deadEmitters.add(k);
+                }
+            }
+        });
+        deadEmitters.stream().forEach(emiiter -> emitterMap.remove(emiiter));
     }
-    
+
     @GetMapping("/uploadResult")
-	public SseEmitter uploadResultAsync(HttpSession session) {
-		
-		var sessionId = session.getId();
+    public SseEmitter uploadResultAsync(HttpSession session) {
+
+        var sessionId = session.getId();
         log.info("uploadResult started by " + sessionId);
 
-        var emitter = new SseEmitter(600000L);
-        
+        var emitter = new SseEmitter(0L);
+
         emitterMap.put(sessionId, emitter);
-        
+
         emitter.onTimeout(() -> {
-            log.info("onTimeout    : " + sessionId + "/" + emitter.toString());
             emitter.complete();
+            log.info("onTimeout    : " + sessionId + "/" + emitter.toString());
         });
-        
+
         emitter.onCompletion(() -> {
-            log.info("onCompletion");
+            synchronized (this) {
+                emitterMap.remove(session, emitter);
+            }
+            log.info("onCompletion : " + sessionId + "/" + emitter.toString());
         });
-        
-        emitter.onError((e) -> log.info("★★★★onError★★★★" + e));
+
+        emitter.onError((e) -> log.info("onError      : " + sessionId + "/" + emitter.toString()));
         return emitter;
-	}
+    }
 
     @GetMapping("/display")
     public ResponseEntity<byte[]> getThumbnail(String fileId) {
 
         log.info("display START");
 
-        var location = UriComponentsBuilder
-                                    .fromHttpUrl("https://lh3.googleusercontent.com/d/{fileId}=s220")
-                                    .buildAndExpand(fileId)
-                                    .toUri();
+        var location = UriComponentsBuilder.fromHttpUrl("https://lh3.googleusercontent.com/d/{fileId}=s220")
+                                           .buildAndExpand(fileId).toUri();
 
         var request = HttpRequest.newBuilder(location)
-                                    .header("content-type", "application/binary")
-                                    .build();
-
+                                 .header("content-type", "application/binary")
+                                 .build();
         try {
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
             return new ResponseEntity<>(response.body(), HttpStatus.OK);

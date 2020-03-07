@@ -50,6 +50,23 @@
         }
         </style>
         <link rel="shortcut icon" href="">
+        <script>
+            let eventSource = new EventSource('/uploadResult');
+
+            eventSource.addEventListener('message', function (e) {
+                console.log(e.data);
+                showUploadedFile(JSON.parse(e.data));
+            });
+
+            eventSource.addEventListener('close', function (e) {
+                console.log('close called by the server');
+                eventSource.close();
+            });
+
+            window.onbeforeunload = function() {
+                eventSource.close();
+            }
+        </script>
 </head>
 
 <body>
@@ -110,29 +127,16 @@
                 // let csrfHeaderName="${_csrf.headerName}";
                 // let csrfTokenValue="${_csrf.token}";
 
-                let eventSource = new EventSource('/uploadResult');
-
-                eventSource.addEventListener('message', function (e) {
-                    // const { fileId, fileName, fileType } = JSON.parse(e.data);
-                    console.log(e.data);
-                    showUploadedFile(JSON.parse(e.data));
-                });
-
-                eventSource.addEventListener('close', function (e) {
-                    console.log('close called by the server');
-                    eventSource.close();
-                });
-                
                 $('button[type="button"]').on("click", function () {
                     let params = new URLSearchParams();
                     let baseUrl = "/board/list";
-                    params.append("pageNum", [[${cri.pageNum}]]);
-                    params.append("amount", [[${cri.amount}]]);
-                    if ([[${ cri.type }]] != null) {
-                        params.append("type", [[${ cri.type }]]);
+                    params.append("pageNum", '[[${cri.pageNum}]]');
+                    params.append("amount", '[[${cri.amount}]]');
+                    if ('[[${cri.type}]]' != null) {
+                        params.append("type", '[[${cri.type}]]');
                     }
-                    if ([[${ cri.keyword }]] != null) {
-                        params.append("keyword", [[${ cri.keyword }]]);
+                    if ('[[${cri.keyword}]]' != null) {
+                        params.append("keyword", '[[${cri.keyword}]]');
                     }
                     self.location = [baseUrl, "?", params].join("");
                 });
@@ -249,12 +253,12 @@
                 let maxSize = 1024 * 1024 * 5; // 5MB
 
                 if (regex.test(fileName)) {
-                    alert([[#{alert.msg.file.extention}]]);
+                    alert('[[#{alert.msg.file.extention}]]');
                     return false;
                 }
 
                 if (fileSize > maxSize) {
-                    alert([[#{alert.msg.file.maxsize}]]);
+                    alert('[[#{alert.msg.file.maxsize}]]');
                     return false;
                 }
                 return true;

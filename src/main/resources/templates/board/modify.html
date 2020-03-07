@@ -198,7 +198,7 @@
 
                 $(".uploadResult").on("click", "button", function () {
                     console.log("delete file");
-                    if (confirm([[#{confirm.msg}]])) {
+                    if (confirm('[[#{confirm.msg}]]')) {
                         let liObj = $(this).closest("li");
                         liObj.remove();
                     }
@@ -314,12 +314,12 @@
                     let maxSize = 1024 * 1024 * 5; // 5MB
 
                     if (regex.test(fileName)) {
-                        alert([[#{alert.msg.file.extention}]]);
+                        alert('[[#{alert.msg.file.extention}]]');
                         return false;
                     }
 
                     if (fileSize > maxSize) {
-                        alert([[#{ alert.msg.file.maxsize }]]);
+                        alert('[[#{alert.msg.file.maxsize }]]');
                         return false;
                     }
                     return true;
