@@ -77,14 +77,6 @@ public class UploadController {
 
     private void notify(String sessionId, String event, BoardAttachVO attach) {
 
-        // var emitter = emitterMap.get(sessionId);
-
-        // if ("close".equals(event)) {
-        // emitter.complete();
-        // emitterMap.remove(sessionId);
-        // return;
-        // }
-
         List<String> deadEmitters = new ArrayList<>();
         emitterMap.forEach((k, v) -> {
             if (k.equals(sessionId)) {
