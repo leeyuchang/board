@@ -27,28 +27,18 @@
         .uploadResult ul li img {
             width: 100px;
         }
-        </style>
-        
-        <style>
-        .bigPictureWrapper {
-          position: absolute;
-          display: none;
-          justify-content: center;
-          align-items: center;
-          top:0%;
-          width:100%;
-          height:100%;
-          background-color: gray; 
-          z-index: 100;
-        }
-        
-        .bigPicture {
-          position: relative;
-          display:flex;
-          justify-content: center;
-          align-items: center;
+
+        .uploadResult ul li span {
+            color: black;
+            margin: 0 0 1em 0;
+			padding: 0;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			font-size: 80%;
         }
         </style>
+
         <link rel="shortcut icon" href="">
         <script>
             let eventSource = new EventSource('/uploadResult');
@@ -108,6 +98,7 @@
                     <div class="panel-body">
                         <div class="form-group uploadDiv">
                             <input type="file" name="uploadFile" class="form-control-file" multiple>
+                            <div id="uploading"></div>
                             <div class="uploadResult">
                                 <ul>
                                 </ul>
@@ -149,10 +140,7 @@
                     let str = "";
 
                     $(".uploadResult ul li").each(function(i, obj) {
-                        
-                        // 
                         let jobj = $(obj);
-                        // let jobj = obj;
                         
                         let fileId = jobj.data("fileid");
                         let fileName = jobj.data("filename");
@@ -171,6 +159,13 @@
                 });
 
                 $('input[type="file"]').change(function (e) {
+
+                    let progress = `<button class="btn btn-primary">
+                                        <span class="spinner-border spinner-border-sm"></span>
+                                        Uploading..
+                                    </button>`;
+                    $('#uploading').html(progress);
+
                     let formData = new FormData();
                     let inputFile = $('input[ name="uploadFile"]');
                     let files = inputFile[0].files;
@@ -191,8 +186,8 @@
                         cache: false,
                         dataType: 'json',
                         success: function (result) {
-                            // $('input[ name="uploadFile"]').val('');
-                            $('input[ name="uploadFile"]').hide('hide');
+                            // $('input[name="uploadFile"]').show('hide');
+                            $('#uploading').remove();
                             eventSource.close();
                         }
                     })
