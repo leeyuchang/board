@@ -29,13 +29,12 @@
         }
 
         .uploadResult ul li span {
-            color: black;
-            margin: 0 0 1em 0;
-			padding: 0;
+            width: 70px;
 			overflow: hidden;
 			white-space: nowrap;
 			text-overflow: ellipsis;
-			font-size: 80%;
+			color: white;
+			display: inline-block;
         }
         </style>
 
@@ -98,7 +97,6 @@
                     <div class="panel-body">
                         <div class="form-group uploadDiv">
                             <input type="file" name="uploadFile" class="form-control-file" multiple>
-                            <div id="uploading"></div>
                             <div class="uploadResult">
                                 <ul>
                                 </ul>
@@ -159,13 +157,6 @@
                 });
 
                 $('input[type="file"]').change(function (e) {
-
-                    let progress = `<button class="btn btn-primary">
-                                        <span class="spinner-border spinner-border-sm"></span>
-                                        Uploading..
-                                    </button>`;
-                    $('#uploading').html(progress);
-
                     let formData = new FormData();
                     let inputFile = $('input[ name="uploadFile"]');
                     let files = inputFile[0].files;
@@ -187,7 +178,6 @@
                         dataType: 'json',
                         success: function (result) {
                             // $('input[name="uploadFile"]').show('hide');
-                            $('#uploading').remove();
                             eventSource.close();
                         }
                     })
