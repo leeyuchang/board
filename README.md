@@ -1,4 +1,4 @@
-# memp
+# memo
 
 Heroku
 PostgreSQL
