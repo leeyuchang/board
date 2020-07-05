@@ -1,5 +1,2 @@
 # memo
-
-Heroku
-PostgreSQL
-Google Drive API
+### Spring-Boot(Java11) with Google Drive API and PostgreSQL on Heroku
